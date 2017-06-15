@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+
+import sys
+
+try:
+    from geopy.geocoders import Nominatim
+    from geopy.distance import vincenty
+except ImportError:
+    print("ERROR: Requires geopy python library.")
+    exit()
+
+cVacuum = 299792458 # m/s
+fiberMultiplier = 1.515 # fiber is about 2/3 the speed of light in a vacuum
+
+def getLocation(locationString):
+    geolocator = Nominatim()
+    loc = geolocator.geocode(locationString)
+    return loc
+
+def getCoord(loc):
+    return (loc.latitude, loc.longitude)
+
+def getDistance(locA, locB):
+    return vincenty(locA, locB).meters
+
+def getTime(meters):
+    t = meters / cVacuum * 1000
+    return t # time in milliseconds
+
+def getFiberTime(meters):
+    return getTime(meters) * 1.515
+
+def main():
+    if len(sys.argv) < 3:
+        print("Please pass two locations, in quotes, on the command line")
+        print("Example: milliseconds \"Los Angeles, CA\" \"London, UK\"")
+        exit()
+    argv = sys.argv
+    l1 = getLocation(argv[1])
+    l2 = getLocation(argv[2])
+
+    c1 = getCoord(l1)
+    c2 = getCoord(l2)
+
+    d = getDistance(c1, c2)
+    t = getTime(d)
+    tf = getFiberTime(d)
+
+    print("The direct distance between %s and %s is %d kilometers. The fastest possible time between these points is %d ms in a vacuum and %d ms through optical fiber." % (l1.address, l2.address, d/1000, t, tf))
+
+
+if __name__ == '__main__':
+    main()
